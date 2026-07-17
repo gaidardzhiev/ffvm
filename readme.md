@@ -94,7 +94,7 @@ Arithmetic is performed in the floating-point domain of the FFmpeg expression ev
 
 FFVM runs with a paired audio stream at the same frame rate, one audio sample per video frame. The audio stream carries program output. The `emit` instruction writes its value as the sample amplitude for the current frame. Frames where `emit` was not executed carry a zero sample. The output of a program is the sequence of non-zero samples in the audio stream, extractable with `ffmpeg -vn` after the fact or piped directly to another process.
 
-The input stream, consumed by the `input` instruction`, is a pre-rendered audio file supplied alongside the program frame. The assembler produces both the initial state frame and the input audio file from the source program and its input data.
+The input stream, consumed by the `input` instruction, is a pre-rendered audio file supplied alongside the program frame. The assembler produces both the initial state frame and the input audio file from the source program and its input data.
 
 Using audio for IO rather than additional video pixels keeps the frame layout clean and makes IO extraction trivial. It also means a complete FFVM execution is a self-contained media file: video carries computation, audio carries output, and any standard media player shows both simultaneously.
 
@@ -120,21 +120,21 @@ FFVM assembly syntax is postfix. Labels are defined with a colon suffix. Instruc
 
 ## Build Sequence
 
-FFVM is not yet implemented. This document describes the design.
+FFVM is not yet fully implemented. This document describes the design.
 
-Stage one proves the execution model. A single `aeval` filter computes Fibonacci numbers iteratively using `st()` and `ld()` across audio samples. This confirms that stateful computation across frames is possible, establishes the precision characteristics of the expression evaluator, and produces a working FFmpeg invocation that can be inspected and extended.
+Stage 0 proves the execution model. A single `aevalsrc` filter computes Fibonacci numbers iteratively using `st()` and `ld()` across audio samples. This confirms that stateful computation across samples is possible, establishes the precision characteristics of the expression evaluator, and identifies the comma-escaping requirement and the `0*(...)` sequencing idiom. Stage 0 is complete.
 
-Stage two implements a static subset of the frame layout without the interpreter. A Python script generates an initial state PNG with known pixel values. A hand-written filter complex reads specific pixels and writes computed values into an output frame. This confirms that pixel-level read-write through `geq` expressions works correctly and establishes the encoding conventions.
+Stage 1 proves the memory model. A Python script generates an initial state PNG with known pixel values. A hand-written filter complex reads specific pixels and writes computed values into an output frame using `geq` expressions. This confirms that pixel-level read-write works correctly and establishes the encoding conventions for the rest of the implementation.
 
-Stage three implements the assembler for the arithmetic and stack instruction subset, with no control flow. The assembler generates a filter complex that executes a fixed sequence of instructions with no jumps. Programs that compute and emit a result are runnable at this stage.
+Stage 2 implements the assembler for the arithmetic and stack instruction subset with no control flow. The assembler generates a filter complex that executes a fixed sequence of instructions. Programs that compute and emit a result are runnable at this stage.
 
-Stage four adds control flow. The IP register, the jump instructions, and the instruction fetch pipeline are implemented. Programs with loops and conditionals run at this stage. This is where the full interpreter graph is first exercised.
+Stage 3 adds control flow. The IP register, the jump instructions, and the instruction fetch pipeline are implemented. Programs with loops and conditionals run at this stage. This is where the full interpreter graph is first exercised and where the stored-program model is validated end to end.
 
-Stage five adds the heap and the load and store instructions. Programs with dynamic memory access run at this stage.
+Stage 4 adds the heap and the load and store instructions. Programs with dynamic memory access run at this stage.
 
-Stage six implements the debug visualization. The green channel annotation, the IP marker, and the probe instruction are implemented. An FFVM execution becomes visually inspectable frame by frame.
+Stage 5 implements the debug visualization. The green channel annotation, the IP marker, and the probe instruction are implemented. An FFVM execution becomes visually inspectable frame by frame.
 
-Stage seven is self-hosting. The assembler is rewritten in FFVM assembly. It is assembled by the stage-six assembler, producing an FFVM execution that assembles FFVM programs. The output of assembling the assembler source with itself must match the output of assembling it with the C assembler.
+Stage 6 is self-hosting. The assembler is rewritten in FFVM assembly. It is assembled by the Stage 5 assembler, producing an FFVM execution that assembles FFVM programs. The output of assembling the assembler source with itself must match the output of assembling it with the C assembler.
 
 
 ## Constraints
