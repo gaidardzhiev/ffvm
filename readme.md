@@ -134,9 +134,9 @@ The [Makefile](Makefile) detects the available compiler in order: gcc, musl-gcc,
 
 FFVM is not yet fully implemented. This document describes the design.
 
-Stage 0 proves the execution model. A single `aevalsrc` filter computes Fibonacci numbers iteratively using `st()` and `ld()` across audio samples. This confirms that stateful computation across samples is possible, establishes the precision characteristics of the expression evaluator, and identifies the comma-escaping requirement and the `0*(...)` sequencing idiom. Stage 0 is complete.
+Stage 0 proves the execution model. A single `aevalsrc` filter computes Fibonacci numbers iteratively using `st()` and `ld()` across audio samples. This confirms that stateful computation across samples is possible, establishes the precision characteristics of the expression evaluator, and identifies the comma-escaping requirement and the `0*(...)` sequencing idiom.
 
-Stage 1 proves the memory model. A Python script generates an initial state PNG with known pixel values. A hand-written filter complex reads specific pixels and writes computed values into an output frame using `geq` expressions. This confirms that pixel-level read-write works correctly and establishes the encoding conventions for the rest of the implementation.
+Stage 1 proves the memory model. We generate an initial state PNG with known pixel values. A hand-written filter complex reads specific pixels and writes computed values into an output frame using `geq` expressions. This confirms that pixel-level read-write works correctly and establishes the encoding conventions for the rest of the implementation.
 
 Stage 2 implements the assembler for the arithmetic and stack instruction subset with no control flow. The assembler generates a filter complex that executes a fixed sequence of instructions. Programs that compute and emit a result are runnable at this stage.
 
