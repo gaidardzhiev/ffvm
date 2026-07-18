@@ -31,7 +31,7 @@ The heap occupies rows 2 through 191, giving 48640 addressable bytes of random-a
 The program occupies rows 192 through 255, giving 16384 bytes of program memory. The instruction pointer indexes into this region. Instructions are variable width: one byte for the opcode, followed by zero or more immediate bytes depending on the instruction. The program is written into the frame before execution begins and is not modified during execution. Self-modifying code is not supported in this version.
 
     Frame layout (256x256, one byte per pixel in red channel):
-    Row 0:         [ registers 0..31 | IP SP FP FL sys0..3 | reserved ]
+    Row 0:         [ registers 0..31 | IP SP FP FL sys0..3 | reserved  ]
     Rows 1..1:     [ stack, grows downward from pixel 256              ]
     Rows 2..191:   [ heap, 48640 bytes, random access                  ]
     Rows 192..255: [ program ROM, 16384 bytes, read-only at runtime    ]
