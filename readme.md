@@ -118,6 +118,18 @@ FFVM assembly syntax is postfix. Labels are defined with a colon suffix. Instruc
         halt
 
 
+## Implementation
+
+The implementation lives in the repository root alongside this document. Each stage is a self-contained C program or shell script that proves one property of the execution model before the next stage builds on it. No stage assumes anything the previous stage did not verify.
+
+The [Makefile](Makefile) detects the available compiler in order: gcc, musl-gcc, tcc, clang. It falls back to cc if none are found. All binaries are built static. Each stage C file compiles independently with no shared headers or libraries beyond libc!
+
+[verify.sh](./verify.sh) runs all stages in sequence and reports pass or fail for each with a timestamp. It builds any missing binary via make before running. A single failure stops the chain and the exit code is zero only if every stage passes.
+
+[Stage 0](./ffvm_stage0.sh) is a shell script, not a C program. It drives ffmpeg directly with an aevalsrc filter expression that computes Fibonacci numbers using st() and ld() slots across audio samples. It takes an optional argument N for the number of terms. The output is one term per line in the form F(n) = value. This stage proves that stateful computation across samples is possible and establishes the two idioms everything else depends on: backslash-escaped commas inside filter expressions, and 0*f(x) for sequencing side effects without polluting the return value.
+
+[Stage 1](./ffvm_stage1.c) is a C program that proves the pixel memory model. It writes known values into row 0 of a 256x256 PPM frame, feeds the frame through ffmpeg with a geq filter that reads row 0 and writes doubled values into row 1, then reads the output frame back and verifies all 65536 pixels exactly. This stage establishes that r(X,Y), g(X,Y), b(X,Y) are the correct channel read functions in geq RGB mode, and that interpolation=nearest is mandatory. The default bilinear interpolation blends adjacent pixel values and silently corrupts exact integer state. PPM is used throughout because it requires no external library, is trivially written and read in C, and ffmpeg reads and writes it natively.
+
 ## Build Sequence
 
 FFVM is not yet fully implemented. This document describes the design.
