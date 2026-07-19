@@ -8,6 +8,7 @@ N='\033[0m'
 
 [ ! -f ffvm_stage0.sh ] && { printf "ffvm_stage0.sh not found\n"; exit 1; }
 [ ! -f ffvm_stage1 ] && make
+[ ! -f ffvm_stage2 ] && make
 
 fprint() {
 	printf "[%s] Test: %-25s Result: %b\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${1}" "${2}"
@@ -49,6 +50,97 @@ stage 1 complete"
 	}
 }
 
-{ ft0 && ft1; ret="${?}"; } || exit 1
+ft2a() {
+	captured=$(./ffvm_stage2 "push:3,push:4,add,emit")
+	expected="result: 7"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage2 Add" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage2 Add" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 4
+	}
+}
+
+ft2b() {
+	captured=$(./ffvm_stage2 "push:10,push:3,sub,emit")
+	expected="result: 7"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage2 Sub" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage2 Sub" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 5
+	}
+}
+
+ft2c() {
+	captured=$(./ffvm_stage2 "push:6,push:7,mul,emit")
+	expected="result: 42"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage2 Mul" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage2 Mul" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 6
+	}
+}
+
+ft2d() {
+	captured=$(./ffvm_stage2 "push:20,push:4,div,emit")
+	expected="result: 5"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage2 Div" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage2 Div" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 7
+	}
+}
+
+ft2e() {
+	captured=$(./ffvm_stage2 "push:5,dup,mul,emit")
+	expected="result: 25"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage2 Dup" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage2 Dup" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 8
+	}
+}
+
+ft2f() {
+	captured=$(./ffvm_stage2 "push:2,push:3,push:4,mul,add,emit")
+	expected="result: 14"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage2 Compound" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage2 Compound" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 9
+	}
+}
+
+ft2g() {
+	captured=$(./ffvm_stage2 "push:1,push:2,swap,sub,emit")
+	expected="result: 1"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage2 Swap" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage2 Swap" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 10
+	}
+}
+
+{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g; ret="${?}"; } || exit 1
 
 [ "${ret}" -eq 0 ] 2>/dev/null || printf "%s\n" "${ret}"

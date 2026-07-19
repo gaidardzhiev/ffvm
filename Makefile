@@ -3,7 +3,7 @@
 
 CC:=$(shell command -v gcc 2>/dev/null || command -v musl-gcc 2>/dev/null || command -v tcc 2>/dev/null || command -v clang 2>/dev/null)
 FLAGS=-static
-BINS=ffvm_stage1
+BINS=ffvm_stage1 ffvm_stage2
 ifeq ($(strip $(CC)),)
 CC=cc
 endif

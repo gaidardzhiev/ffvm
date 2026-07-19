@@ -130,6 +130,8 @@ The [Makefile](Makefile) detects the available compiler in order: gcc, musl-gcc,
 
 [Stage 1](./ffvm_stage1.c) is a C program that proves the pixel memory model. It writes known values into row 0 of a 256x256 PPM frame, feeds the frame through ffmpeg with a geq filter that reads row 0 and writes doubled values into row 1, then reads the output frame back and verifies all 65536 pixels exactly. This stage establishes that r(X,Y), g(X,Y), b(X,Y) are the correct channel read functions in geq RGB mode, and that interpolation=nearest is mandatory. The default bilinear interpolation blends adjacent pixel values and silently corrupts exact integer state. PPM is used throughout because it requires no external library, is trivially written and read in C, and ffmpeg reads and writes it natively.
 
+[Stage 2](./ffvm_stage2.c) is a C program that implements the assembler for arithmetic and stack instructions with no control flow. It takes a comma-separated postfix program as a command line argument, parses it, and emits an FFmpeg filter_complex string where each instruction becomes one or two geq filter stages chained by labels. State passes frame to frame through the pixel values. The result is read from the output pixel at row 255, column 0. This stage proves that a linear sequence of stack operations can be compiled to a filtergraph and executed correctly. Supported instructions are push, pop, dup, swap, add, sub, mul, div, and emit.
+
 ## Build Sequence
 
 FFVM is not yet fully implemented. This document describes the design.
