@@ -9,6 +9,7 @@ N='\033[0m'
 [ ! -f ffvm_stage0.sh ] && { printf "ffvm_stage0.sh not found\n"; exit 1; }
 [ ! -f ffvm_stage1 ] && make
 [ ! -f ffvm_stage2 ] && make
+[ ! -f ffvm_stage3 ] && make
 
 fprint() {
 	printf "[%s] Test: %-25s Result: %b\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${1}" "${2}"
@@ -141,6 +142,71 @@ ft2g() {
 	}
 }
 
-{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g; ret="${?}"; } || exit 1
+ft3a() {
+	captured=$(./ffvm_stage3 "push:3,push:4,add,emit,halt")
+	expected="result: 7"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage3 Fetch" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage3 Fetch" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 11
+	}
+}
+
+ft3b() {
+	captured=$(./ffvm_stage3 "push:1,jmp:skip,push:99,skip:,emit,halt")
+	expected="result: 1"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage3 Jump" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage3 Jump" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 12
+	}
+}
+
+ft3c() {
+	captured=$(./ffvm_stage3 "push:2,push:3,gt,jz:l1,push:111,jmp:l2,l1:,push:222,l2:,emit,halt")
+	expected="result: 222"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage3 Branch" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage3 Branch" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 13
+	}
+}
+
+ft3d() {
+	captured=$(./ffvm_stage3 "push:5,loop:,push:1,sub,dup,jnz:loop,emit,halt")
+	expected="result: 0"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage3 Loop" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage3 Loop" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 14
+	}
+}
+
+ft3e() {
+	captured=$(./ffvm_stage3 "push:0,storer:0,push:5,loop:,dup,loadr:0,add,storer:0,push:1,sub,dup,jnz:loop,pop,loadr:0,emit,halt")
+	expected="result: 15"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage3 Accumulator" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage3 Accumulator" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 15
+	}
+}
+
+{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e; ret="${?}"; } || exit 1
 
 [ "${ret}" -eq 0 ] 2>/dev/null || printf "%s\n" "${ret}"
