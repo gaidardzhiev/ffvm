@@ -37,6 +37,7 @@ static const insn TAB[] = {
 	{"eq", 20, 0}, {"lt", 21, 0}, {"gt", 22, 0},
 	{"load", 32, 1}, {"store", 33, 1}, {"loadx", 34, 0}, {"storex", 35, 0},
 	{"loadr", 48, 1}, {"storer", 49, 1},
+	{"probe", 56, 0},
 };
 
 static fr fm;
@@ -125,18 +126,23 @@ static void build_fc(char *fc, size_t cap) {
 		"1,if(eq(ld(2),35),ld(4)-2,if(max(max(max(eq(ld(2),5),eq(ld(2),6)),max(eq(ld(2),7),eq(ld(2),8))),max(max(eq(ld(2),20),eq("
 		"ld(2),21)),eq(ld(2),22))),ld(4)-1,if(max(max(eq(ld(2),2),eq(ld(2),49)),max(max(eq(ld(2),17),eq(ld(2),18)),max(eq(ld(2),1"
 		"9),eq(ld(2),33)))),ld(4)-1,ld(4))))),if(eq(X,35),if(eq(ld(2),0),bitor(ld(5),1),if(eq(ld(2),8)*eq(ld(6),0),bitor(ld(5),2)"
-		",ld(5))),if(eq(X,40),if(eq(ld(2),19),ld(6),r(40,0)),r(X,Y)))))),if(eq(Y,1),if(eq(ld(2),32)*eq(X,ld(4)),r(ld(3),2),if(eq("
-		"ld(2),34)*eq(X,ld(4)-1),r(ld(6),2),if(eq(ld(2),48)*eq(X,ld(4)),r(ld(3),0),if(eq(ld(2),1)*eq(X,ld(4)),ld(3),if(eq(ld(2),3"
-		")*eq(X,ld(4)),ld(6),if(eq(ld(2),4)*eq(X,ld(4)-1),ld(7),if(eq(ld(2),4)*eq(X,ld(4)-2),ld(6),if(eq(ld(2),5)*eq(X,ld(4)-2),m"
-		"od(ld(7)+ld(6),256),if(eq(ld(2),6)*eq(X,ld(4)-2),mod(ld(7)-ld(6)+256,256),if(eq(ld(2),7)*eq(X,ld(4)-2),mod(ld(7)*ld(6),2"
-		"56),if(eq(ld(2),8)*eq(X,ld(4)-2),if(eq(ld(6),0),0,trunc(ld(7)/ld(6))),if(eq(ld(2),20)*eq(X,ld(4)-2),eq(ld(7),ld(6)),if(e"
-		"q(ld(2),21)*eq(X,ld(4)-2),lt(ld(7),ld(6)),if(eq(ld(2),22)*eq(X,ld(4)-2),gt(ld(7),ld(6)),r(X,1))))))))))))))),if(eq(Y,2),"
-		"if(eq(ld(2),33)*eq(X,ld(3)),ld(6),if(eq(ld(2),35)*eq(X,ld(6)),ld(7),r(X,2))),r(X,Y)))))";
+		",ld(5))),if(eq(X,40),if(max(eq(ld(2),19),eq(ld(2),56)),ld(6),r(40,0)),r(X,Y)))))),if(eq(Y,1),if(eq(ld(2),32)*eq(X,ld(4))"
+		",r(ld(3),2),if(eq(ld(2),34)*eq(X,ld(4)-1),r(ld(6),2),if(eq(ld(2),48)*eq(X,ld(4)),r(ld(3),0),if(eq(ld(2),1)*eq(X,ld(4)),l"
+		"d(3),if(eq(ld(2),3)*eq(X,ld(4)),ld(6),if(eq(ld(2),4)*eq(X,ld(4)-1),ld(7),if(eq(ld(2),4)*eq(X,ld(4)-2),ld(6),if(eq(ld(2),"
+		"5)*eq(X,ld(4)-2),mod(ld(7)+ld(6),256),if(eq(ld(2),6)*eq(X,ld(4)-2),mod(ld(7)-ld(6)+256,256),if(eq(ld(2),7)*eq(X,ld(4)-2)"
+		",mod(ld(7)*ld(6),256),if(eq(ld(2),8)*eq(X,ld(4)-2),if(eq(ld(6),0),0,trunc(ld(7)/ld(6))),if(eq(ld(2),20)*eq(X,ld(4)-2),eq"
+		"(ld(7),ld(6)),if(eq(ld(2),21)*eq(X,ld(4)-2),lt(ld(7),ld(6)),if(eq(ld(2),22)*eq(X,ld(4)-2),gt(ld(7),ld(6)),r(X,1)))))))))"
+		")))))),if(eq(Y,2),if(eq(ld(2),33)*eq(X,ld(3)),ld(6),if(eq(ld(2),35)*eq(X,ld(6)),ld(7),r(X,2))),r(X,Y)))))";
+	static const char *ge =
+		"if(eq(Y,192)*eq(X,r(32,0)),255,if(eq(Y,192),40,if(eq(Y,1)*eq(X,r(33,0)-1)*gt(r(33,0),0),255,if(eq(Y,1)*lt(X,r(33,0)),80,"
+		"if(eq(Y,0)*eq(X,32),255,if(eq(Y,0)*eq(X,40),160,0))))))";
 	char er[1<<13];
+	char eg[1<<12];
 	esc(er, sizeof(er), re);
+	esc(eg, sizeof(eg), ge);
 	snprintf(fc, cap,
-		"[0:v]geq=r='%s':g='g(X\\,Y)':b='b(X\\,Y)':interpolation=nearest[o]",
-		er);
+		"[0:v]geq=r='%s':g='%s':b='b(X\\,Y)':interpolation=nearest[o]",
+		er, eg);
 }
 
 static int find(const char *nm) {
@@ -178,7 +184,7 @@ static int resolve(char sym[][32], int *sad, int ns, const char *nm) {
 
 static void usage(const char *nm) {
 	fprintf(stderr, "usage: %s <program>\n", nm);
-	fprintf(stderr, "example: push:42,store:7,load:7,emit,halt\n");
+	fprintf(stderr, "example: push:5,probe,emit,halt\n");
 }
 
 int main(int argc, char **argv) {
@@ -240,8 +246,8 @@ int main(int argc, char **argv) {
 	char fc[1<<14];
 	build_fc(fc, sizeof(fc));
 	char pa[64], pb[64];
-	snprintf(pa, sizeof(pa), "/tmp/ffvm4_%d_a.ppm", (int)getpid());
-	snprintf(pb, sizeof(pb), "/tmp/ffvm4_%d_b.ppm", (int)getpid());
+	snprintf(pa, sizeof(pa), "/tmp/ffvm5_%d_a.ppm", (int)getpid());
+	snprintf(pb, sizeof(pb), "/tmp/ffvm5_%d_b.ppm", (int)getpid());
 	if (wppm(pa, &fm) < 0) return 1;
 	const char *cur = pa;
 	const char *nxt = pb;

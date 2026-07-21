@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #define W 256
 #define H 256
@@ -87,7 +88,7 @@ static int rppm(const char *p, fr *f) {
 
 static void mkcmd(char *cmd, size_t sz, const char *ip, const char *op) {
 	snprintf(cmd, sz,
-		 "ffmpeg -hide_banner -loglevel error"
+		 "ffmpeg -y -hide_banner -loglevel error"
 		 " -f image2 -i %s"
 		 " -vf \"geq="
 		 "r='if(eq(Y\\,1)\\,min(2*r(X\\,0)\\,255)\\,r(X\\,Y))':"
@@ -99,8 +100,9 @@ static void mkcmd(char *cmd, size_t sz, const char *ip, const char *op) {
 }
 
 int main(void) {
-	const char *ip = "/tmp/s1in.ppm";
-	const char *op = "/tmp/s1out.ppm";
+	char ip[64], op[64];
+	snprintf(ip, sizeof(ip), "/tmp/ffvm1_%d_in.ppm", (int)getpid());
+	snprintf(op, sizeof(op), "/tmp/ffvm1_%d_out.ppm", (int)getpid());
 	memset(&in, 0, sizeof(in));
 	for (int x = 0; x < W; x++)
 		in.r[px(x,0)] = (x < 255) ? (uint8_t)(x+1) : 255;
@@ -138,6 +140,8 @@ int main(void) {
 				err++;
 			}
 		}
+	remove(ip);
+	remove(op);
 	printf("%d pixels checked, %d errors\n", chk, err);
 	if (!err) {
 		printf("stage 1 complete\n");

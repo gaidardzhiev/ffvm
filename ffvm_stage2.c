@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #define W 256
 #define H 256
@@ -216,12 +217,13 @@ int main(int argc, char **argv) {
 		tok = strtok(NULL, ",");
 	}
 	memset(&fm, 0, sizeof(fm));
-	const char *frm = "/tmp/s2frame.ppm";
-	const char *out = "/tmp/s2out.ppm";
+	char frm[64], out[64];
+	snprintf(frm, sizeof(frm), "/tmp/ffvm2_%d_frame.ppm", (int)getpid());
+	snprintf(out, sizeof(out), "/tmp/ffvm2_%d_out.ppm", (int)getpid());
 	if (wppm(frm, &fm) < 0) return 1;
 	char cmd[1<<21];
 	snprintf(cmd, sizeof(cmd),
-		 "ffmpeg -hide_banner -loglevel error"
+		 "ffmpeg -y -hide_banner -loglevel error"
 		 " -f image2 -i %s"
 		 " -filter_complex \"%s\""
 		 " -map \"[%s]\""
@@ -232,7 +234,13 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	fr res;
-	if (rppm(out, &res) < 0) return 1;
+	if (rppm(out, &res) < 0) {
+		remove(frm);
+		remove(out);
+		return 1;
+	}
+	remove(frm);
+	remove(out);
 	printf("result: %d\n", res.r[(H-1)*W + 0]);
 	return 0;
 }

@@ -11,6 +11,7 @@ N='\033[0m'
 [ ! -f ffvm_stage2 ] && make
 [ ! -f ffvm_stage3 ] && make
 [ ! -f ffvm_stage4 ] && make
+[ ! -f ffvm_stage5 ] && make
 
 fprint() {
 	printf "[%s] Test: %-25s Result: %b\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${1}" "${2}"
@@ -273,6 +274,45 @@ ft4e() {
 	}
 }
 
-{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e && ft4a && ft4b && ft4c && ft4d && ft4e; ret="${?}"; } || exit 1
+ft5a() {
+	captured=$(./ffvm_stage5 "push:9,probe,halt")
+	expected="result: 9"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage5 Probe Peek" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage5 Probe Peek" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 21
+	}
+}
+
+ft5b() {
+	captured=$(./ffvm_stage5 "push:3,probe,push:4,add,emit,halt")
+	expected="result: 7"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage5 Probe Nondestruct" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage5 Probe Nondestruct" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 22
+	}
+}
+
+ft5c() {
+	captured=$(./ffvm_stage5 "push:0,storer:0,w:,loadr:0,push:1,add,storer:0,loadr:0,probe,loadr:0,push:3,lt,jnz:w,loadr:0,emit,halt")
+	expected="result: 3"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage5 Probe In Loop" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage5 Probe In Loop" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 23
+	}
+}
+
+{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e && ft4a && ft4b && ft4c && ft4d && ft4e && ft5a && ft5b && ft5c; ret="${?}"; } || exit 1
 
 [ "${ret}" -eq 0 ] 2>/dev/null || printf "%s\n" "${ret}"

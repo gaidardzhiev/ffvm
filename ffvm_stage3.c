@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #define W 256
 #define H 256
@@ -234,8 +235,9 @@ int main(int argc, char **argv) {
 	for (int i = 0; i < 256; i++) fm.r[RY*W + i] = rom[i];
 	char fc[1<<14];
 	build_fc(fc, sizeof(fc));
-	const char *pa = "/tmp/s3a.ppm";
-	const char *pb = "/tmp/s3b.ppm";
+	char pa[64], pb[64];
+	snprintf(pa, sizeof(pa), "/tmp/ffvm3_%d_a.ppm", (int)getpid());
+	snprintf(pb, sizeof(pb), "/tmp/ffvm3_%d_b.ppm", (int)getpid());
 	if (wppm(pa, &fm) < 0) return 1;
 	const char *cur = pa;
 	const char *nxt = pb;
@@ -253,9 +255,15 @@ int main(int argc, char **argv) {
 			cur, fc, nxt);
 		if (system(cmd) != 0) {
 			fprintf(stderr, "ffmpeg failed\n");
+			remove(pa);
+			remove(pb);
 			return 1;
 		}
-		if (rppm(nxt, &res) < 0) return 1;
+		if (rppm(nxt, &res) < 0) {
+			remove(pa);
+			remove(pb);
+			return 1;
+		}
 		steps++;
 		out = res.r[0*W + OUTX];
 		if (res.r[0*W + FLX] & 1) break;
@@ -263,6 +271,8 @@ int main(int argc, char **argv) {
 		cur = nxt;
 		nxt = tmp;
 	}
+	remove(pa);
+	remove(pb);
 	printf("result: %d\n", out);
 	return 0;
 }
