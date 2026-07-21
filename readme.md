@@ -140,7 +140,7 @@ The [Makefile](Makefile) detects the available compiler in order: gcc, musl-gcc,
 
 ## Build Sequence
 
-FFVM is not yet fully implemented. This document describes the design.
+FFVM is not yet fully implemented. This document describes the design. Stages 0 through 5 are complete and passing [verify.sh](./verify.sh). Stage 6 is in progress.
 
 Stage 0 proves the execution model. A single `aevalsrc` filter computes Fibonacci numbers iteratively using `st()` and `ld()` across audio samples. This confirms that stateful computation across samples is possible, establishes the precision characteristics of the expression evaluator, and identifies the comma-escaping requirement and the `0*(...)` sequencing idiom.
 
