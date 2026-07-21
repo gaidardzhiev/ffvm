@@ -10,6 +10,7 @@ N='\033[0m'
 [ ! -f ffvm_stage1 ] && make
 [ ! -f ffvm_stage2 ] && make
 [ ! -f ffvm_stage3 ] && make
+[ ! -f ffvm_stage4 ] && make
 
 fprint() {
 	printf "[%s] Test: %-25s Result: %b\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${1}" "${2}"
@@ -207,6 +208,71 @@ ft3e() {
 	}
 }
 
-{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e; ret="${?}"; } || exit 1
+ft4a() {
+	captured=$(./ffvm_stage4 "push:42,store:7,load:7,emit,halt")
+	expected="result: 42"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage4 Store" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage4 Store" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 16
+	}
+}
+
+ft4b() {
+	captured=$(./ffvm_stage4 "push:99,push:5,storex,load:5,emit,halt")
+	expected="result: 99"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage4 Storex" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage4 Storex" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 17
+	}
+}
+
+ft4c() {
+	captured=$(./ffvm_stage4 "push:77,store:9,push:9,loadx,emit,halt")
+	expected="result: 77"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage4 Loadx" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage4 Loadx" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 18
+	}
+}
+
+ft4d() {
+	captured=$(./ffvm_stage4 "push:1,store:3,push:2,store:3,load:3,emit,halt")
+	expected="result: 2"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage4 Overwrite" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage4 Overwrite" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 19
+	}
+}
+
+ft4e() {
+	captured=$(./ffvm_stage4 "push:0,storer:0,w:,loadr:0,push:1,add,loadr:0,storex,loadr:0,push:1,add,storer:0,loadr:0,push:3,lt,jnz:w,push:0,loadx,push:1,loadx,add,push:2,loadx,add,emit,halt")
+	expected="result: 6"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage4 Memory Loop" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage4 Memory Loop" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 20
+	}
+}
+
+{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e && ft4a && ft4b && ft4c && ft4d && ft4e; ret="${?}"; } || exit 1
 
 [ "${ret}" -eq 0 ] 2>/dev/null || printf "%s\n" "${ret}"
