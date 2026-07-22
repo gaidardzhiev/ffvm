@@ -12,6 +12,7 @@ N='\033[0m'
 [ ! -f ffvm_stage3 ] && make
 [ ! -f ffvm_stage4 ] && make
 [ ! -f ffvm_stage5 ] && make
+[ ! -f ffvm_stage6 ] && make
 
 fprint() {
 	printf "[%s] Test: %-25s Result: %b\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${1}" "${2}"
@@ -313,6 +314,63 @@ ft5c() {
 	}
 }
 
-{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e && ft4a && ft4b && ft4c && ft4d && ft4e && ft5a && ft5b && ft5c; ret="${?}"; } || exit 1
+ft6a() {
+	captured=$(./ffvm_stage6 "push:300,push:500,add,emit,halt")
+	expected="result: 800"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage6 Wide Add" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage6 Wide Add" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 24
+	}
+}
+
+ft6b() {
+	captured=$(./ffvm_stage6 "push:40000,store:15000,load:15000,emit,halt")
+	expected="result: 40000"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage6 High Memory" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage6 High Memory" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 25
+	}
+}
+
+ft6c() {
+	captured=$(./ffvm_stage6 "push:321,push:15800,storex,push:15800,loadx,emit,halt")
+	expected="result: 321"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage6 High Indirect" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage6 High Indirect" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 26
+	}
+}
+
+ft6d() {
+	tin=$(mktemp)
+	tout=$(mktemp)
+	printf 'Hi' > "${tin}"
+	./ffvm_stage6 "push:0,storer:0,loop:,loadr:0,load:15809,lt,jz:done,loadr:0,loadx,push:7650,loadr:0,add,storex,loadr:0,push:1,add,storer:0,jmp:loop,done:,load:15809,store:15808,halt" "${tin}" "${tout}" >/dev/null 2>&1
+	captured=$(cat "${tout}")
+	expected="Hi"
+	rm -f "${tin}" "${tout}"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage6 Tape Echo" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage6 Tape Echo" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 27
+	}
+}
+
+{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e && ft4a && ft4b && ft4c && ft4d && ft4e && ft5a && ft5b && ft5c && ft6a && ft6b && ft6c && ft6d; ret="${?}"; } || exit 1
 
 [ "${ret}" -eq 0 ] 2>/dev/null || printf "%s\n" "${ret}"
