@@ -13,6 +13,7 @@ N='\033[0m'
 [ ! -f ffvm_stage4 ] && make
 [ ! -f ffvm_stage5 ] && make
 [ ! -f ffvm_stage6 ] && make
+[ ! -f ffvm_stage7 ] && make
 
 fprint() {
 	printf "[%s] Test: %-25s Result: %b\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${1}" "${2}"
@@ -371,6 +372,45 @@ ft6d() {
 	}
 }
 
-{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e && ft4a && ft4b && ft4c && ft4d && ft4e && ft5a && ft5b && ft5c && ft6a && ft6b && ft6c && ft6d; ret="${?}"; } || exit 1
+ft7a() {
+	captured=$(./ffvm_stage7 "p300p500+eh")
+	expected="result: 800"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage7 Compact Add" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage7 Compact Add" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 28
+	}
+}
+
+ft7b() {
+	captured=$(./ffvm_stage7 "p40000t5000l5000eh")
+	expected="result: 40000"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage7 Compact Memory" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage7 Compact Memory" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 29
+	}
+}
+
+ft7c() {
+	captured=$(./ffvm_stage7 "p7jEp99:Eeh")
+	expected="result: 7"
+	[ "${captured}" = "${expected}" ] && {
+		fprint "Stage7 Compact Label" "${G}PASSED${N}"
+		return 0
+	} || {
+		fprint "Stage7 Compact Label" "${R}FAILED${N}"
+		printf "expected:\n%s\ncaptured:\n%s\n\n" "${expected}" "${captured}"
+		return 30
+	}
+}
+
+{ ft0 && ft1 && ft2a && ft2b && ft2c && ft2d && ft2e && ft2f && ft2g && ft3a && ft3b && ft3c && ft3d && ft3e && ft4a && ft4b && ft4c && ft4d && ft4e && ft5a && ft5b && ft5c && ft6a && ft6b && ft6c && ft6d && ft7a && ft7b && ft7c; ret="${?}"; } || exit 1
 
 [ "${ret}" -eq 0 ] 2>/dev/null || printf "%s\n" "${ret}"
